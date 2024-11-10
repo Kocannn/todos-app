@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/kocannn/todos-app/config"
+	"github.com/kocannn/todos-app/routes"
 )
 
 func main() {
@@ -16,7 +17,9 @@ func main() {
 
 	r := gin.Default()
 
-	config.ConnectionDB()
+	db := config.ConnectionDB()
+
+	routes.Routes(r, db)
 
 	r.Run("localhost:8080")
 

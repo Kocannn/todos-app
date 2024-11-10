@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kocannn/todos-app/domain"
 )
@@ -11,7 +13,20 @@ type UserHandler struct {
 
 // CreateUser implements domain.UserHandler.
 func (u *UserHandler) CreateUser(c *gin.Context) {
-	panic("unimplemented")
+	var user *domain.User
+
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	createUser, err := u.UserService.CreateUser(*user)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": createUser})
+
 }
 
 // Login implements domain.UserHandler.
