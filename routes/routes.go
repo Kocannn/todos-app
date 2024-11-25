@@ -7,7 +7,7 @@ import (
 
 func Routes(r *gin.Engine, db *gorm.DB) {
 
-	user := r.Group("/user")
+	user := r.Group("/api/v1/user")
 
 	UserRoutes(user, db)
 

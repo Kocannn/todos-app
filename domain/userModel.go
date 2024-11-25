@@ -17,12 +17,13 @@ type User struct {
 }
 
 type UserRepository interface {
-	CreateUser(user User) (User, error)
+	CreateUser(user *User) (*User, error)
+	GetUserByEmail(email string) (*User, error)
 }
 
 type UserService interface {
-	CreateUser(user User) (User, error)
-	Login(email, password string) (User, error)
+	CreateUser(user *User) (*User, error)
+	Login(email, password string) (string, error)
 }
 
 type UserHandler interface {

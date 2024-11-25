@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/kocannn/todos-app/domain"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/kocannn/todos-app/helper"
 )
 
 type userService struct {
@@ -12,27 +12,44 @@ type userService struct {
 }
 
 // CreateUser implements domain.UserService.
-func (u *userService) CreateUser(user domain.User) (domain.User, error) {
+func (u *userService) CreateUser(user *domain.User) (*domain.User, error) {
 
-	if err := validateInput(user); err != nil {
+	if err := validateInput(*user); err != nil {
 		return user, err
 	}
-	pw := []byte(user.Password)
-	hashedPassword, err := bcrypt.GenerateFromPassword(pw, bcrypt.DefaultCost)
 
-	user.Password = string(hashedPassword)
-
+	hashedPassword, err := helper.HassPassword(user.Password)
 	if err != nil {
 		return user, err
 	}
+
+	user.Password = hashedPassword
 
 	return u.userRepo.CreateUser(user)
 
 }
 
 // Login implements domain.UserService.
-func (u *userService) Login(email string, password string) (domain.User, error) {
-	panic("unimplemented")
+func (u *userService) Login(email string, password string) (string, error) {
+	user, err := u.userRepo.GetUserByEmail(email)
+	if err != nil {
+		return "", err
+	}
+
+	isPasswordValid, err := helper.ComparePassword(user.Password, password)
+	if err != nil {
+		return "", err
+	}
+	if !isPasswordValid {
+		return "", errors.New("Invalid password")
+	}
+
+	token, err := helper.GenerateJWT(user)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+
 }
 
 func NewUserService(userRepo domain.UserRepository) domain.UserService {

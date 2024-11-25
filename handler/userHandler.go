@@ -19,7 +19,7 @@ func (u *UserHandler) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	createUser, err := u.UserService.CreateUser(*user)
+	createUser, err := u.UserService.CreateUser(user)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -31,7 +31,22 @@ func (u *UserHandler) CreateUser(c *gin.Context) {
 
 // Login implements domain.UserHandler.
 func (u *UserHandler) Login(c *gin.Context) {
-	panic("unimplemented")
+	var loginRequest struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindBodyWithJSON(&loginRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := u.UserService.Login(loginRequest.Email, loginRequest.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"token": token, "message": "Login success"})
 }
 
 func NewUserHandler(userService domain.UserService) domain.UserHandler {

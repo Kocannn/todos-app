@@ -14,4 +14,5 @@ func UserRoutes(group *gin.RouterGroup, db *gorm.DB) {
 	userHandler := handler.NewUserHandler(userService)
 
 	group.POST("/signup", userHandler.CreateUser)
+	group.POST("/login", userHandler.Login)
 }
