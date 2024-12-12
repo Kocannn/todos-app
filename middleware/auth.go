@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -18,8 +19,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Trim the "Bearer " prefix and any leading/trailing spaces
-		tokenString := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
+		tokenString := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Bearer token is required"})
 			c.Abort()
@@ -33,7 +33,13 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		log.Printf("Token: %s", tokenString)
+		log.Printf("Secret: %s", secret)
+
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.NewValidationError("unexpected signing method", jwt.ValidationErrorSignatureInvalid)
+			}
 			return []byte(secret), nil
 		})
 		if err != nil {
@@ -41,11 +47,30 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
 		if !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
+
+		userId, ok := claims["userId"].(float64)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid userId in token"})
+			c.Abort()
+			return
+		}
+
+		// Simpan userId dalam konteks permintaan
+		c.Set("userId", int(userId))
+
 		c.Next()
 	}
 }

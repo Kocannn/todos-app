@@ -13,14 +13,23 @@ type TodoHandler struct {
 
 // CreateTodo implements domain.TodoHandler.
 func (t *TodoHandler) CreateTodo(c *gin.Context) {
-	var todo *domain.Todo
+	var todo domain.Todo
 
 	if err := c.ShouldBindJSON(&todo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	createTodo, err := t.TodoService.CreateTodo(todo)
+	// Dapatkan userId dari konteks permintaan
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found"})
+		return
+	}
+
+	todo.UserId = userId.(int)
+
+	createTodo, err := t.TodoService.CreateTodo(&todo)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -51,23 +60,20 @@ func (t *TodoHandler) DeleteTodo(c *gin.Context) {
 
 // GetTodos implements domain.TodoHandler.
 func (t *TodoHandler) GetTodos(c *gin.Context) {
-	var todos []domain.Todo
-	var userId *int
 
-	if err := c.ShouldBindBodyWithJSON(&userId); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found"})
 		return
 	}
 
-	todos, err := t.TodoService.GetTodos(*userId)
-
+	todos, err := t.TodoService.GetTodos(userId.(int))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "success get todo", "data": todos})
-
 }
 
 // UpdateTodo implements domain.TodoHandler.

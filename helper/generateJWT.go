@@ -10,15 +10,10 @@ import (
 )
 
 func GenerateJWT(user *domain.User) (string, error) {
-	type customUser struct {
-		Email    string `json:"email"`
-	}
-
-	var newUsers customUser
-	newUsers.Email = user.Email
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email":    newUsers.Email,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		"userId": user.Id,
+		"email":  user.Email,
+		"exp":    time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	secret := os.Getenv("SECRET")
@@ -31,5 +26,4 @@ func GenerateJWT(user *domain.User) (string, error) {
 		return "", err
 	}
 	return tokenString, nil
-
 }
